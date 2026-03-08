@@ -24,10 +24,24 @@ pipeline {
             }
         }
 
+        stage('Run Tests') {
+            steps {
+                script {
+                    // Mount full workspace to container so tests outside 'app/' are accessible
+                    docker.image("${env.IMAGE_NAME}:${env.BUILD_NUMBER}").inside("-v ${env.WORKSPACE}:/workspace") {
+                        sh '''
+                            pip install --upgrade pip
+                            pip install -r /workspace/requirements.txt
+                            pytest -v /workspace/tests
+                        '''
+                    }
+                }
+            }
+        }
+
         stage('Deploy to Kubernetes') {
             steps {
                 script {
-                    // Use kubectl Docker image and mount host kubeconfig
                     docker.image('bitnami/kubectl:latest').inside("-v $HOME/.kube:/root/.kube") {
                         sh '''
                             kubectl apply -f k8s/deployment.yaml
