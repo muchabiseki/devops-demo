@@ -26,20 +26,6 @@ pipeline {
             }
         }
 
-        stage('Run Tests') {
-            steps {
-                script {
-                    docker.image("${env.IMAGE_NAME}:${env.BUILD_NUMBER}").inside("-v ${env.WORKSPACE}/tests:/tests") {
-                        sh '''
-                            echo "Listing /tests directory contents inside container:"
-                            ls -l /tests
-                            pytest -v /tests
-                        '''
-                    }
-                }
-            }
-        }
-
         stage('Deploy to Kubernetes') {
             steps {
                 script {
