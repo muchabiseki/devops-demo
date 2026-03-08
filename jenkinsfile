@@ -12,13 +12,15 @@ pipeline {
                 checkout([$class: 'GitSCM',
                           branches: [[name: 'refs/heads/main']],
                           userRemoteConfigs: [[url: 'https://github.com/muchabiseki/devops-demo.git']]])
+                sh 'ls -l'
+                sh 'ls -l tests'
             }
         }
 
         stage('Build Docker Image') {
             steps {
                 script {
-                    def appDir = 'app'
+                    def appDir = 'app' // folder containing Dockerfile
                     dockerImage = docker.build("${env.IMAGE_NAME}:${env.BUILD_NUMBER}", "-f ${appDir}/Dockerfile ${appDir}")
                 }
             }
@@ -27,9 +29,12 @@ pipeline {
         stage('Run Tests') {
             steps {
                 script {
-                    // Mount only tests folder
                     docker.image("${env.IMAGE_NAME}:${env.BUILD_NUMBER}").inside("-v ${env.WORKSPACE}/tests:/tests") {
-                        sh 'pytest -v /tests'
+                        sh '''
+                            echo "Listing /tests directory contents inside container:"
+                            ls -l /tests
+                            pytest -v /tests
+                        '''
                     }
                 }
             }
