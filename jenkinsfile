@@ -18,7 +18,7 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
-                    def appDir = 'app' // folder containing Dockerfile
+                    def appDir = 'app'
                     dockerImage = docker.build("${env.IMAGE_NAME}:${env.BUILD_NUMBER}", "-f ${appDir}/Dockerfile ${appDir}")
                 }
             }
@@ -27,11 +27,9 @@ pipeline {
         stage('Run Tests') {
             steps {
                 script {
-                    // Mount full workspace to container so tests outside 'app/' are accessible
+                    // Mount only tests folder
                     docker.image("${env.IMAGE_NAME}:${env.BUILD_NUMBER}").inside("-v ${env.WORKSPACE}/tests:/tests") {
-                        sh '''
-                            pytest -v /tests
-                        '''
+                        sh 'pytest -v /tests'
                     }
                 }
             }
