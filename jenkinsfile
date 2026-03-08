@@ -28,11 +28,11 @@ pipeline {
             steps {
                 script {
                     // Mount full workspace to container so tests outside 'app/' are accessible
-                    docker.image("${env.IMAGE_NAME}:${env.BUILD_NUMBER}").inside("-v ${env.WORKSPACE}:/workspace") {
+                    docker.image("${env.IMAGE_NAME}:${env.BUILD_NUMBER}").inside("-v ${env.WORKSPACE}tests:/tests") {
                         sh '''
                             pip install --upgrade pip
-                            pip install -r /workspace/requirements.txt
-                            pytest -v /workspace/tests
+                            pip install -r /app/requirements.txt
+                            pytest -v /tests
                         '''
                     }
                 }
