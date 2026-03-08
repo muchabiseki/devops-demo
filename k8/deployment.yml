@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: devops-demo
+
+spec:
+  replicas: 3
+
+  selector:
+    matchLabels:
+      app: devops-demo
+
+  template:
+    metadata:
+      labels:
+        app: devops-demo
+
+    spec:
+      containers:
+      - name: api
+        image: muchabiseki/devops-demo:1
+        ports:
+        - containerPort: 8000
