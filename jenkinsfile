@@ -42,12 +42,17 @@ pipeline {
         stage('Deploy to Kubernetes') {
             steps {
                 script {
-                    // Override entrypoint to avoid bitnami/kubectl ENTRYPOINT issue
                     docker.image('bitnami/kubectl:latest').inside("--entrypoint='' -v $HOME/.kube:/root/.kube") {
                         sh '''
+                            echo "Checking cluster connectivity..."
+                            kubectl cluster-info || { echo "Cannot reach cluster"; exit 1; }
+                            kubectl get nodes || { echo "Cannot list nodes"; exit 1; }
+
                             echo "Deploying to Kubernetes..."
-                            kubectl apply -f k8s/deployment.yaml
-                            kubectl apply -f k8s/service.yaml
+                            kubectl apply -f k8s/deployment.yaml --validate=false
+                            kubectl apply -f k8s/service.yaml --validate=false
+
+                            echo "Waiting for rollout..."
                             kubectl rollout status deployment/devops-demo
                         '''
                     }
