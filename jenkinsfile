@@ -44,17 +44,21 @@ pipeline {
                 script {
                     docker.image('bitnami/kubectl:latest').inside("--entrypoint='' -v $HOME/.kube:/root/.kube") {
                         sh '''
-                            echo "Checking cluster connectivity..."
-                            kubectl cluster-info || { echo "Cannot reach cluster"; exit 1; }
-                            kubectl get nodes || { echo "Cannot list nodes"; exit 1; }
+                    echo "Checking cluster connectivity..."
 
-                            echo "Deploying to Kubernetes..."
-                            kubectl apply -f k8s/deployment.yaml --validate=false
-                            kubectl apply -f k8s/service.yaml --validate=false
+                    # Use host.docker.internal for Docker Desktop
+                    export KUBERNETES_MASTER=https://host.docker.internal:6443
 
-                            echo "Waiting for rollout..."
-                            kubectl rollout status deployment/devops-demo
-                        '''
+                    kubectl --kubeconfig=/root/.kube/config cluster-info || { echo "Cannot reach cluster"; exit 1; }
+                    kubectl --kubeconfig=/root/.kube/config get nodes || { echo "Cannot list nodes"; exit 1; }
+
+                    echo "Deploying to Kubernetes..."
+                    kubectl --kubeconfig=/root/.kube/config apply -f k8s/deployment.yaml --validate=false
+                    kubectl --kubeconfig=/root/.kube/config apply -f k8s/service.yaml --validate=false
+
+                    echo "Waiting for rollout..."
+                    kubectl --kubeconfig=/root/.kube/config rollout status deployment/devops-demo
+                '''
                     }
                 }
             }
