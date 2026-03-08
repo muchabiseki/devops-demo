@@ -10,7 +10,7 @@ pipeline {
         stage('Checkout') {
             steps {
                 cleanWs()
-                // Checkout the main branch
+                // Clone the main branch of your repo
                 checkout([$class: 'GitSCM', 
                           branches: [[name: 'refs/heads/main']], 
                           userRemoteConfigs: [[url: 'https://github.com/muchabiseki/devops-demo.git']]])
@@ -20,8 +20,8 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
-                    def appDir = "devops-demo/app"
-                    // Build Docker image using Docker Pipeline plugin
+                    def appDir = "app" // relative to repo root after checkout
+                    // Use Jenkins Docker plugin to build image
                     dockerImage = docker.build("${env.IMAGE_NAME}:${env.BUILD_NUMBER}", "-f ${appDir}/Dockerfile ${appDir}")
                 }
             }
@@ -30,7 +30,7 @@ pipeline {
         stage('Push Docker Image') {
             steps {
                 script {
-                    // Push using Docker credentials stored in Jenkins
+                    // Push using Docker Hub credentials stored in Jenkins
                     withDockerRegistry([credentialsId: 'docker-hub-creds', url: 'https://index.docker.io/v1/']) {
                         dockerImage.push()
                     }
@@ -41,7 +41,7 @@ pipeline {
         stage('Run Tests') {
             steps {
                 script {
-                    // Optional: Run Python tests inside the Docker image
+                    // Run tests inside the Docker image
                     docker.image("${env.IMAGE_NAME}:${env.BUILD_NUMBER}").inside {
                         sh 'pytest'
                     }
@@ -53,7 +53,7 @@ pipeline {
 
     post {
         always {
-            cleanWs()
+            cleanWs() // clean workspace after every build
         }
     }
 }
