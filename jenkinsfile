@@ -2,14 +2,13 @@ pipeline {
     agent any
 
     environment {
-        IMAGE_NAME = 'muchabiseki/devops-demo'
+        IMAGE_NAME = 'local/devops-demo'
     }
 
     stages {
         stage('Checkout') {
             steps {
                 cleanWs()
-                // Clone the main branch of your repo
                 checkout([$class: 'GitSCM',
                           branches: [[name: 'refs/heads/main']],
                           userRemoteConfigs: [[url: 'https://github.com/muchabiseki/devops-demo.git']]])
@@ -19,26 +18,22 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
-                    def appDir = 'app' // relative to repo root after checkout
-                    // Use Jenkins Docker plugin to build image
+                    def appDir = 'app' // folder containing Dockerfile
                     dockerImage = docker.build("${env.IMAGE_NAME}:${env.BUILD_NUMBER}", "-f ${appDir}/Dockerfile ${appDir}")
                 }
             }
         }
 
-        stage('Push Docker Image') {
-            steps {
-                // Push the image to a local Docker registry (or local cache)
-                sh 'docker push muchabiseki/devops-demo:$BUILD_NUMBER'
-            }
-        }
-
-        stage('Run Tests') {
+        stage('Deploy to Kubernetes') {
             steps {
                 script {
-                    // Run tests inside the Docker image
-                    docker.image("${env.IMAGE_NAME}:${env.BUILD_NUMBER}").inside {
-                        sh 'pytest'
+                    // Use kubectl Docker image and mount host kubeconfig
+                    docker.image('bitnami/kubectl:latest').inside("-v $HOME/.kube:/root/.kube") {
+                        sh '''
+                            kubectl apply -f k8s/deployment.yaml
+                            kubectl apply -f k8s/service.yaml
+                            kubectl rollout status deployment/devops-demo
+                        '''
                     }
                 }
             }
@@ -47,7 +42,7 @@ pipeline {
 
     post {
         always {
-            cleanWs() // clean workspace after every build
+            cleanWs()
         }
     }
 }
