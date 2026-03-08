@@ -2,17 +2,16 @@ pipeline {
     agent any
 
     environment {
-        IMAGE_NAME = "muchabiseki/devops-demo"
+        IMAGE_NAME = 'muchabiseki/devops-demo'
     }
 
     stages {
-
         stage('Checkout') {
             steps {
                 cleanWs()
                 // Clone the main branch of your repo
-                checkout([$class: 'GitSCM', 
-                          branches: [[name: 'refs/heads/main']], 
+                checkout([$class: 'GitSCM',
+                          branches: [[name: 'refs/heads/main']],
                           userRemoteConfigs: [[url: 'https://github.com/muchabiseki/devops-demo.git']]])
             }
         }
@@ -20,7 +19,7 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
-                    def appDir = "app" // relative to repo root after checkout
+                    def appDir = 'app' // relative to repo root after checkout
                     // Use Jenkins Docker plugin to build image
                     dockerImage = docker.build("${env.IMAGE_NAME}:${env.BUILD_NUMBER}", "-f ${appDir}/Dockerfile ${appDir}")
                 }
@@ -29,12 +28,8 @@ pipeline {
 
         stage('Push Docker Image') {
             steps {
-                script {
-                    // Push using Docker Hub credentials stored in Jenkins
-                    withDockerRegistry([credentialsId: 'docker-hub-creds', url: 'https://index.docker.io/v1/']) {
-                        dockerImage.push()
-                    }
-                }
+                // Push the image to a local Docker registry (or local cache)
+                sh 'docker push muchabiseki/devops-demo:$BUILD_NUMBER'
             }
         }
 
@@ -48,7 +43,6 @@ pipeline {
                 }
             }
         }
-
     }
 
     post {
