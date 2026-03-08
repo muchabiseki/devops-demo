@@ -30,8 +30,9 @@ pipeline {
                     // Mount full workspace to container so tests outside 'app/' are accessible
                     docker.image("${env.IMAGE_NAME}:${env.BUILD_NUMBER}").inside("-v ${env.WORKSPACE}/tests:/tests") {
                         sh '''
-                            pip install --upgrade pip
-                            pip install -r /app/requirements.txt
+                           # pip install --upgrade pip
+                           # pip install -r /app/requirements.txt
+                           # pytest is already installed via Dockerfile requirements.txt
                             pytest -v /tests
                         '''
                     }
