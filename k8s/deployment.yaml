@@ -18,6 +18,7 @@ spec:
     spec:
       containers:
       - name: api
-        image: muchabiseki/devops-demo:1
+        image: local/devops-demo:latest
+        imagePullPolicy: Never
         ports:
         - containerPort: 8000
