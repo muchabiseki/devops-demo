@@ -2,12 +2,13 @@ pipeline {
     agent {
         docker {
             image 'bitnami/kubectl:latest'
-            args '-v /var/run/docker.sock:/var/run/docker.sock'
+            args '-v /var/run/docker.sock:/var/run/docker.sock -v $HOME/.kube:/root/.kube'
         }
     }
 
     environment {
         IMAGE_NAME = 'local/devops-demo'
+        IMAGE_TAG  = "${env.BUILD_NUMBER}"
     }
 
     stages {
@@ -27,7 +28,7 @@ pipeline {
             steps {
                 script {
                     def appDir = 'app' // folder containing Dockerfile
-                    dockerImage = docker.build("${env.IMAGE_NAME}:${env.BUILD_NUMBER}", "-f ${appDir}/Dockerfile ${appDir}")
+                    dockerImage = docker.build("${env.IMAGE_NAME}:${env.IMAGE_TAG}", "-f ${appDir}/Dockerfile ${appDir}")
                 }
             }
         }
@@ -35,11 +36,12 @@ pipeline {
         stage('Run Tests') {
             steps {
                 script {
-                    // If you add tests back, mount them like this
-                    // docker.image("${env.IMAGE_NAME}:${env.BUILD_NUMBER}").inside("-v ${env.WORKSPACE}/tests:/tests") {
-                    //     sh 'pytest -v /tests'
-                    // }
+                    // Skipping tests for now
                     echo 'Skipping tests for now'
+                // Example if you add tests:
+                // docker.image("${env.IMAGE_NAME}:${env.IMAGE_TAG}").inside {
+                //     sh 'pytest -v /tests'
+                // }
                 }
             }
         }
@@ -47,10 +49,8 @@ pipeline {
         stage('Deploy to Kubernetes') {
             steps {
                 script {
-                    // Apply deployment & service YAML directly from workspace
                     sh '''
                         echo "Checking cluster connectivity..."
-
                         kubectl cluster-info
                         kubectl get nodes
 
