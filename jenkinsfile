@@ -4,6 +4,7 @@ pipeline {
     environment {
         IMAGE_NAME = 'local/devops-demo'
         IMAGE_TAG  = "${env.BUILD_NUMBER}"
+        K8S_KUBECONFIG = '/root/.kube/config'  // Path to the kubeconfig for Kubernetes
     }
 
     stages {
@@ -50,11 +51,11 @@ pipeline {
                         kubectl get nodes
 
                         echo "Deploying to Kubernetes..."
-                        kubectl apply -f k8s/deployment.yaml --validate=false
-                        kubectl apply -f k8s/service.yaml --validate=false
+                        kubectl --kubeconfig=${K8S_KUBECONFIG} apply -f k8s/deployment.yaml --validate=false
+                        kubectl --kubeconfig=${K8S_KUBECONFIG} apply -f k8s/service.yaml --validate=false
 
                         echo "Waiting for rollout..."
-                        kubectl rollout status deployment/devops-demo
+                        kubectl --kubeconfig=${K8S_KUBECONFIG} rollout status deployment/devops-demo
                     '''
                 }
             }
